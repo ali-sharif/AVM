@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import p.avm.Address;
+import p.avm.AltBn128;
 import p.avm.Blockchain;
 import p.avm.Result;
 
@@ -52,10 +53,12 @@ public class NodeEnvironment {
         Map<String, byte[]> generatedShadowJDK = CommonGenerators.generateShadowJDK();
         this.sharedClassLoader = new AvmSharedClassLoader(generatedShadowJDK);
         try {
+
             this.shadowApiClasses = new Class<?>[] {
                 Address.class,
                 Blockchain.class,
                 Result.class,
+                AltBn128.class,
             };
 
             Class<?>[] arraywrapperClasses = new Class<?>[]{
@@ -159,6 +162,11 @@ public class NodeEnvironment {
 
             // Inject shadow and api class into shared classloader so we can build a static cache
             this.sharedClassLoader.putIntoStaticCache(this.shadowClasses);
+
+            // Load the AltBn128 class (call the clinit)
+            Class<?> instance = Class.forName(AltBn128.class.getName(), true, this.sharedClassLoader);
+            RuntimeAssertionError.assertTrue(AltBn128.class == instance);
+
             this.sharedClassLoader.putIntoStaticCache(this.shadowApiClasses);
             this.sharedClassLoader.putIntoStaticCache(exceptionwrapperClasses);
             this.sharedClassLoader.finishInitialization();
@@ -369,6 +377,9 @@ public class NodeEnvironment {
 
         return classNames;
     }
+
+
+
 
     /**
      * Returns a deep copy of a class hierarchy that already is populated with all of the shadow

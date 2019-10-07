@@ -1,51 +1,18 @@
 package p.avm;
 
+import a.ByteArray;
+import org.aion.tetryon.AltBn128Jni;
 import s.java.lang.Object;
 import i.IInstrumentation;
 import org.aion.avm.RuntimeMethodFeeSchedule;
 
 import java.io.File;
 import java.io.IOException;
+import s.java.math.BigInteger;
 import java.util.Scanner;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class AltBn128 extends Object {
-
-    @SuppressWarnings("unused")
-    public static class DetectPlatform {
-        private String os;
-        private String arch;
-
-        public DetectPlatform() {
-            // resolve OS
-            String osName = System.getProperty("os.name").toLowerCase();
-            if (osName.contains("win")) {
-                this.os = "win";
-            } else if (osName.contains("linux")) {
-                this.os = "linux";
-            } else if (osName.contains("mac")) {
-                this.os = "mac";
-            } else {
-                throw new RuntimeException("unrecognized os: " + osName);
-            }
-
-            // resolve architecture
-            String osArch = System.getProperty("os.arch").toLowerCase();
-            if (osArch.contains("amd64") || osArch.contains("x86_64")) {
-                this.arch = "amd64";
-            } else {
-                throw new RuntimeException("unrecognized architecture: " + osName);
-            }
-        }
-
-        public String getOs() { return os; }
-
-        public String getArch() { return arch; }
-
-        public String toString() {
-            return os + "_" + arch;
-        }
-    }
 
     public static class NativeLoader {
         private static File buildPath(String... args) {
@@ -59,7 +26,7 @@ public class AltBn128 extends Object {
         }
 
         public static void loadLibrary(String module) {
-            File dir = buildPath("native", new DetectPlatform().toString(), module);
+            File dir = buildPath("native", module);
 
             try (Scanner s = new Scanner(new File(dir, "file.list"))) {
                 while (s.hasNextLine()) {
@@ -79,15 +46,12 @@ public class AltBn128 extends Object {
         }
     }
 
-    private static class AltBn128Jni {
-        public native byte[] altBn128Add(byte[] point1, byte[] point2);
-        public native byte[] altBn128Mul(byte[] point, byte[] scalar);
-        public native boolean altBn128Pair(byte[] g1_point_list, byte[] g2_point_list);
-    }
-
     // load native libraries
     static {
-        NativeLoader.loadLibrary("altbn128");
+        NativeLoader.loadLibrary("bn128");
+        //System.out.println("Loading native lib.");
+        //System.load("/native/libbn-jni.so");
+        System.out.println("Native lib LOADED!");
     }
 
     @SuppressWarnings("unused")
@@ -122,16 +86,16 @@ public class AltBn128 extends Object {
      * @param point2 point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      *
      */
-    public static byte[] avm_g1EcAdd(byte[] point1, byte[] point2) {
+    public static ByteArray avm_g1EcAdd(ByteArray point1, ByteArray point2) {
         // assert valid data.
         assert (point1 != null && point2 != null &&
-                point1.length == G1_POINT_SIZE && point2.length == G1_POINT_SIZE);
+                point1.length() == G1_POINT_SIZE && point2.length() == G1_POINT_SIZE);
 
         // gas costing
         IInstrumentation.attachedThreadInstrumentation.get().chargeEnergy(AltBn128_avm_g1EcAdd);
 
         // call jni
-        return Holder.INSTANCE.altBn128Add(point1, point2);
+        return new ByteArray(Holder.INSTANCE.g1EcAdd(point1.getUnderlying(), point2.getUnderlying()));
     }
 
     /**
@@ -140,16 +104,22 @@ public class AltBn128 extends Object {
      * @param point point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      * @param scalar natural number (> 0), byte aligned to 32 bytes.
      */
-    public static byte[] avm_g1EcMul(byte[] point, byte[] scalar) {
+    public static ByteArray avm_g1EcMul(ByteArray point, BigInteger scalar) {
         // assert valid data.
         assert (point != null && scalar != null &&
-                point.length == G1_POINT_SIZE && scalar.length == WORD_SIZE);
+                point.length() == G1_POINT_SIZE && scalar.getUnderlying().signum() != -1); // scalar can't be negative (it can be zero or positive)
+
+        byte[] sdata = scalar.getUnderlying().toByteArray();
+        assert (sdata.length <= WORD_SIZE);
+
+        byte[] sdata_aligned = new byte[WORD_SIZE];
+        System.arraycopy(sdata, 0, sdata_aligned, WORD_SIZE - sdata.length, sdata.length);
 
         // gas costing
         IInstrumentation.attachedThreadInstrumentation.get().chargeEnergy(AltBn128_avm_g1EcMul);
 
         // call jni
-        return Holder.INSTANCE.altBn128Mul(point, scalar);
+        return new ByteArray(Holder.INSTANCE.g1EcMul(point.getUnderlying(), sdata_aligned));
     }
 
     /**
@@ -166,12 +136,12 @@ public class AltBn128 extends Object {
      *                      Each coordinate is byte aligned to 32 bytes.
      *
      */
-    public static boolean avm_pairingCheck(byte[] g1_point_list, byte[] g2_point_list) {
+    public static boolean avm_ecPair(ByteArray g1_point_list, ByteArray g2_point_list) {
         // assert valid data.
         assert (g1_point_list != null && g2_point_list != null &&
-                g1_point_list.length % G1_POINT_SIZE == 0 && g2_point_list.length % G2_POINT_SIZE == 0); // data is well-aligned
-        int g1_list_size = g1_point_list.length / G1_POINT_SIZE;
-        int g2_list_size = g2_point_list.length / G2_POINT_SIZE;
+                g1_point_list.length() % G1_POINT_SIZE == 0 && g2_point_list.length() % G2_POINT_SIZE == 0); // data is well-aligned
+        int g1_list_size = g1_point_list.length() / G1_POINT_SIZE;
+        int g2_list_size = g2_point_list.length() / G2_POINT_SIZE;
         assert (g1_list_size == g2_list_size);
 
         // gas costing: the list size tells you how many pairing operations will be performed
@@ -179,7 +149,7 @@ public class AltBn128 extends Object {
                 AltBn128_avm_pairingCheck_base + g1_list_size * AltBn128_avm_pairingCheck_per_pairing);
 
         // call jni
-        return Holder.INSTANCE.altBn128Pair(g1_point_list, g2_point_list);
+        return Holder.INSTANCE.ecPair(g1_point_list.getUnderlying(), g2_point_list.getUnderlying());
 
     }
 

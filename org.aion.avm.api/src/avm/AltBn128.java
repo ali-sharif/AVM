@@ -1,5 +1,7 @@
 package avm;
 
+import java.math.BigInteger;
+
 /**
  * Implementation of functions required to verify a SNARK
  * <p>
@@ -32,7 +34,7 @@ public class AltBn128 {
      * @param point point in G1, encoded like so: [p.x || p.y]. Each coordinate is byte aligned to 32 bytes.
      * @param scalar natural number (> 0), byte aligned to 32 bytes.
      */
-    public static byte[] g1EcMul(byte[] point, byte[] scalar) {
+    public static byte[] g1EcMul(byte[] point, BigInteger scalar) {
         return null;
     }
 
@@ -50,7 +52,7 @@ public class AltBn128 {
      *                      Each coordinate is byte aligned to 32 bytes.
      *
      */
-    public static boolean pairingCheck(byte[] g1_point_list, byte[] g2_point_list) {
+    public static boolean ecPair(byte[] g1_point_list, byte[] g2_point_list) {
         return false;
     }
 
