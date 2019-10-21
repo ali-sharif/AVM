@@ -11,12 +11,19 @@ import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings("SpellCheckingInspection")
+/**
+ * Java wrapper for alt-bn128 curve implemented here: https://github.com/paritytech/bn
+ *
+ * todo: the three functions have different failure mode. fix for production.
+ * todo: move more of the point validation logic into the JNI wrapper. fix for production.
+ */
 public class AltBn128 extends Object {
 
     // load native libraries
     static {
         try {
             // the only reason to do this, is to avoid touching the java.library.path
+            // assumes a file called "libbn_jni.so" lives at the same location as the jar
             System.load(new File("libbn_jni.so").getCanonicalPath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to load native library for altbn-128");
@@ -51,14 +58,19 @@ public class AltBn128 extends Object {
     /**
      * Computes EC addition in G1
      *
+     * We do buffer size validation here (not done in JNI wrapper).
+     *
+     * Failure Mode: Any illegal points yield a '0' as result.
+     *
      * @param point1 point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      * @param point2 point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      *
      */
-    public static ByteArray avm_g1EcAdd(ByteArray point1, ByteArray point2) {
+    public static ByteArray avm_g1EcAdd(ByteArray point1, ByteArray point2) throws RuntimeException {
         // assert valid data.
-        assert (point1 != null && point2 != null &&
-                point1.length() == G1_POINT_SIZE && point2.length() == G1_POINT_SIZE);
+        require(point1 != null && point2 != null &&
+                point1.length() == G1_POINT_SIZE && point2.length() == G1_POINT_SIZE,
+                "input point serialization invalid");
 
         // gas costing
         IInstrumentation.attachedThreadInstrumentation.get().chargeEnergy(AltBn128_avm_g1EcAdd);
@@ -70,16 +82,21 @@ public class AltBn128 extends Object {
     /**
      * Computes scalar multiplication in G1
      *
+     * We do buffer size validation here (not done in JNI wrapper).
+     *
+     * Failure Mode: Any illegal points as input yields an Exception with message "NotOnCurve".
+     *
      * @param point point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      * @param scalar natural number (> 0), byte aligned to 32 bytes.
      */
-    public static ByteArray avm_g1EcMul(ByteArray point, BigInteger scalar) {
+    public static ByteArray avm_g1EcMul(ByteArray point, BigInteger scalar) throws RuntimeException {
         // assert valid data.
-        assert (point != null && scalar != null &&
-                point.length() == G1_POINT_SIZE && scalar.getUnderlying().signum() != -1); // scalar can't be negative (it can be zero or positive)
+        require(point != null && scalar != null &&
+                point.length() == G1_POINT_SIZE && scalar.getUnderlying().signum() != -1,
+                "point serialization invalid or negative scalar"); // scalar can't be negative (it can be zero or positive)
 
         byte[] sdata = scalar.getUnderlying().toByteArray();
-        assert (sdata.length <= WORD_SIZE);
+        require(sdata.length <= WORD_SIZE, "scalar is too large");
 
         byte[] sdata_aligned = new byte[WORD_SIZE];
         System.arraycopy(sdata, 0, sdata_aligned, WORD_SIZE - sdata.length, sdata.length);
@@ -99,19 +116,24 @@ public class AltBn128 extends Object {
      * Pairing Check input is a sequence of point pairs, the result is either success (true) or failure (false) <br/>
      * <br/>
      *
+     * We do buffer size validation here (not done in JNI wrapper).
+     *
+     * Failure Mode: Any illegal points as input yield a result 'false'.
+     *
      * @param g1_point_list list of points in G1, encoded like so: [p1.x || p1.y || p2.x || p2.y || ...].
      *                      Each coordinate is byte aligned to 32 bytes.
      * @param g2_point_list list of points in G2, encoded like so: [p1[0].x || p1[0].y || p1[1].x || p2[1].y || p2[0].x || ...].
      *                      Each coordinate is byte aligned to 32 bytes.
      *
      */
-    public static boolean avm_ecPair(ByteArray g1_point_list, ByteArray g2_point_list) {
+    public static boolean avm_ecPair(ByteArray g1_point_list, ByteArray g2_point_list) throws RuntimeException {
         // assert valid data.
-        assert (g1_point_list != null && g2_point_list != null &&
-                g1_point_list.length() % G1_POINT_SIZE == 0 && g2_point_list.length() % G2_POINT_SIZE == 0); // data is well-aligned
+        require(g1_point_list != null && g2_point_list != null &&
+                g1_point_list.length() % G1_POINT_SIZE == 0 && g2_point_list.length() % G2_POINT_SIZE == 0,
+                "data is not well-aligned");
         int g1_list_size = g1_point_list.length() / G1_POINT_SIZE;
         int g2_list_size = g2_point_list.length() / G2_POINT_SIZE;
-        assert (g1_list_size == g2_list_size);
+        require(g1_list_size == g2_list_size, "g1 and g2 lists must contain same number of points");
 
         // gas costing: the list size tells you how many pairing operations will be performed
         IInstrumentation.attachedThreadInstrumentation.get().chargeEnergy(
@@ -122,9 +144,7 @@ public class AltBn128 extends Object {
 
     }
 
-    private void require(boolean condition, String message) {
-        if (!condition) {
-            throw new IllegalArgumentException(message);
-        }
+    private static void require(boolean condition, String message) throws IllegalArgumentException{
+        if (!condition) throw new IllegalArgumentException(message);
     }
 }
