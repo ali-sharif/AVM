@@ -1,15 +1,14 @@
 package p.avm;
 
 import a.ByteArray;
-import org.aion.tetryon.AltBn128Jni;
-import s.java.lang.Object;
 import i.IInstrumentation;
 import org.aion.avm.RuntimeMethodFeeSchedule;
+import org.aion.tetryon.AltBn128Jni;
+import s.java.lang.Object;
+import s.java.math.BigInteger;
 
 import java.io.File;
 import java.io.IOException;
-import s.java.math.BigInteger;
-import java.util.Scanner;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class AltBn128 extends Object {
@@ -17,12 +16,11 @@ public class AltBn128 extends Object {
     // load native libraries
     static {
         try {
-            System.load(new File("native/bn128/libbn-jni.so").getCanonicalPath());
+            // the only reason to do this, is to avoid touching the java.library.path
+            System.load(new File("libbn_jni.so").getCanonicalPath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to load native library for altbn-128");
         }
-
-        System.out.println("Native lib LOADED!");
     }
 
     @SuppressWarnings("unused")
