@@ -1,5 +1,6 @@
 package org.aion.tetryon;
 
+@SuppressWarnings("unused")
 public class AltBn128Jni {
     public native byte[] g1EcAdd(byte[] point1, byte[] point2);
     public native byte[] g1EcMul(byte[] point, byte[] scalar);
