@@ -14,43 +14,14 @@ import java.util.Scanner;
 @SuppressWarnings("SpellCheckingInspection")
 public class AltBn128 extends Object {
 
-    public static class NativeLoader {
-        private static File buildPath(String... args) {
-            StringBuilder sb = new StringBuilder();
-            for (String arg : args) {
-                sb.append(File.separator);
-                sb.append(arg);
-            }
-
-            return sb.length() > 0 ? new File(sb.substring(1)) : new File(".");
-        }
-
-        public static void loadLibrary(String module) {
-            File dir = buildPath("native", module);
-
-            try (Scanner s = new Scanner(new File(dir, "file.list"))) {
-                while (s.hasNextLine()) {
-                    String line = s.nextLine();
-
-                    if (line.startsWith("/") || line.startsWith(".")) { // for debug
-                        // purpose
-                        // mainly
-                        System.load(line);
-                    } else {
-                        System.load(new File(dir, line).getCanonicalPath());
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load libraries for " + module, e);
-            }
-        }
-    }
-
     // load native libraries
     static {
-        NativeLoader.loadLibrary("bn128");
-        //System.out.println("Loading native lib.");
-        //System.load("/native/libbn-jni.so");
+        try {
+            System.load(new File("native/bn128/libbn-jni.so").getCanonicalPath());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load native library for altbn-128");
+        }
+
         System.out.println("Native lib LOADED!");
     }
 
