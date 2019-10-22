@@ -31,7 +31,7 @@ public class AltBn128 {
      * @throws IllegalArgumentException if the input arguments fail validation
      * @throws RuntimeException if error occurs in native library (e.g. result of calculation yields a point not on curve)
      */
-    public static byte[] g1EcAdd(byte[] point1, byte[] point2) throws RuntimeException {
+    public static byte[] g1EcAdd(byte[] point1, byte[] point2) throws IllegalArgumentException {
         return null;
     }
 
@@ -48,7 +48,7 @@ public class AltBn128 {
      * @throws IllegalArgumentException if the input arguments fail validation
      * @throws RuntimeException if error occurs in native library (e.g. result of calculation yields a point not on curve)
      */
-    public static byte[] g1EcMul(byte[] point, BigInteger scalar) throws RuntimeException {
+    public static byte[] g1EcMul(byte[] point, BigInteger scalar) throws IllegalArgumentException {
         return null;
     }
 
@@ -71,7 +71,7 @@ public class AltBn128 {
      * @throws IllegalArgumentException if the input arguments fail validation
      * @throws RuntimeException if error occurs in native library (e.g. result of calculation yields a point not on curve)
      */
-    public static boolean ecPair(byte[] g1_point_list, byte[] g2_point_list) throws RuntimeException {
+    public static boolean isPairingProdEqualToOne(byte[] g1_point_list, byte[] g2_point_list) throws IllegalArgumentException {
         return false;
     }
 
