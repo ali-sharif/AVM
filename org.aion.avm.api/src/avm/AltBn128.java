@@ -15,7 +15,7 @@ import java.math.BigInteger;
  * Note that the interface to this class is a bunch of byte arrays, since the implementation
  * goes ahead and calls the alt_bn128 native library
  */
-@SuppressWarnings("unused")
+@SuppressWarnings("RedundantThrows")
 public class AltBn128 {
 
     /**
@@ -31,7 +31,7 @@ public class AltBn128 {
      * @throws IllegalArgumentException if the input arguments fail validation
      * @throws RuntimeException if error occurs in native library (e.g. result of calculation yields a point not on curve)
      */
-    public static byte[] g1EcAdd(byte[] point1, byte[] point2) throws IllegalArgumentException {
+    public static byte[] g1EcAdd(byte[] point1, byte[] point2) throws Exception {
         return null;
     }
 
@@ -48,7 +48,7 @@ public class AltBn128 {
      * @throws IllegalArgumentException if the input arguments fail validation
      * @throws RuntimeException if error occurs in native library (e.g. result of calculation yields a point not on curve)
      */
-    public static byte[] g1EcMul(byte[] point, BigInteger scalar) throws IllegalArgumentException {
+    public static byte[] g1EcMul(byte[] point, BigInteger scalar) throws Exception {
         return null;
     }
 
@@ -71,7 +71,7 @@ public class AltBn128 {
      * @throws IllegalArgumentException if the input arguments fail validation
      * @throws RuntimeException if error occurs in native library (e.g. result of calculation yields a point not on curve)
      */
-    public static boolean isPairingProdEqualToOne(byte[] g1_point_list, byte[] g2_point_list) throws IllegalArgumentException {
+    public static boolean isPairingProdEqualToOne(byte[] g1_point_list, byte[] g2_point_list) throws Exception {
         return false;
     }
 

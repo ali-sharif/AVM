@@ -60,7 +60,7 @@ public class G16SquarePreimage {
         }
 
         public static Proof deserialize(byte[] data) {
-            assert data.length == 8*WORD_SIZE;
+            Blockchain.require(data.length == 8*WORD_SIZE);
 
             G1Point a = Util.deserializeG1(Arrays.copyOfRange(data, 0, 2*WORD_SIZE));
             G2Point b = Util.deserializeG2(Arrays.copyOfRange(data, 2*WORD_SIZE, 6*WORD_SIZE));
@@ -107,16 +107,15 @@ public class G16SquarePreimage {
         return new VerifyingKey(alpha, beta, gamma, delta, gamma_abc);
     }
 
-    public static boolean verify(BigInteger[] input, Proof proof) {
-
+    public static boolean verify(BigInteger[] input, Proof proof) throws Exception {
         BigInteger snarkScalarField = new BigInteger("21888242871839275222246405745257275088548364400416034343698204186575808495617");
         VerifyingKey vk = verifyingKey();
-        require(input.length + 1 == vk.gamma_abc.length);
+        Blockchain.require(input.length + 1 == vk.gamma_abc.length);
 
         // X = gamma_0 + gamma_1 * input_0 + gamma_2 * input_1
         G1Point X = new G1Point(Fp.zero(), Fp.zero());
         for (int i = 0; i < input.length; i++) {
-            require(input[i].compareTo(snarkScalarField) < 0);
+            Blockchain.require(input[i].compareTo(snarkScalarField) < 0);
             G1Point tmp = G1.mul(vk.gamma_abc[i + 1], input[i]);
             if (i == 0)
                 X = tmp;
@@ -142,24 +141,12 @@ public class G16SquarePreimage {
 
     @Callable
     public static boolean verify(BigInteger[] input, byte[] proof) {
-        //require(proof.length == 2 + 4 + 2); // a in g1, b in g2, c in g1
-
-        return verify(input, Proof.deserialize(proof));
-
-        /*
-        return verify(input, new Proof(
-                new G1Point(new Fp(proof[0]), new Fp(proof[1])),
-                new G2Point(
-                        new Fp2(proof[2], proof[3]),
-                        new Fp2(proof[4], proof[5])
-                ),
-                new G1Point(new Fp(proof[6]), new Fp(proof[7]))
-        ));*/
-    }
-
-    private static void require(boolean condition) {
-        if (!condition) {
-            Blockchain.revert();
+        try {
+            return verify(input, Proof.deserialize(proof));
+        } catch (Exception e) {
+            Blockchain.println("verify() failed with exception: " + e.getMessage());
         }
+
+        return false;
     }
 }

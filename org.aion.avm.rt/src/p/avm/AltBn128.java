@@ -19,6 +19,12 @@ import java.io.IOException;
  */
 public class AltBn128 extends Object {
 
+    public static int WORD_SIZE = 32;
+    // points in G1 are encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
+    public static int G1_POINT_SIZE = 2 * WORD_SIZE;
+    // points in G2, encoded like so: [p1[0].x || p1[0].y || p1[1].x || p2[1].y || p2[0].x]. Each coordinate is 32-byte aligned.
+    public static int G2_POINT_SIZE = 4 * WORD_SIZE;
+
     // load native libraries
     static {
         try {
@@ -48,12 +54,6 @@ public class AltBn128 extends Object {
     public static final long AltBn128_avm_pairingCheck_base = RT_BN_METHOD_FEE_PAIRING_BASE; // native benchmark per op ~ 3ms (1 op) - 1.4ms (amortized over 10 ops) (more expensive over jni)
     public static final long AltBn128_avm_pairingCheck_per_pairing = RT_BN_METHOD_FEE_PAIRING_INSTANCE;
 
-    private static int WORD_SIZE = 32;
-    // points in G1 are encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
-    private static int G1_POINT_SIZE = 2 * WORD_SIZE;
-    // points in G2, encoded like so: [p1[0].x || p1[0].y || p1[1].x || p2[1].y || p2[0].x]. Each coordinate is 32-byte aligned.
-    private static int G2_POINT_SIZE = 4 * WORD_SIZE;
-
     // Runtime-facing implementation
     /**
      * Computes EC addition in G1
@@ -65,10 +65,12 @@ public class AltBn128 extends Object {
      * @param point1 point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      * @param point2 point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      *
-     * @return a G1 point. If addition failed (e.g. due to Not On Curve error), a zero ByteArray (of correct size) is returned.
+     * @throws RuntimeException if point addition failed (e.g. due to Not On Curve error)
+     * @throws IllegalArgumentException if invalid data provided
      *
+     * @return a point in G1.
      */
-    public static ByteArray avm_g1EcAdd(ByteArray point1, ByteArray point2) throws IllegalArgumentException {
+    public static ByteArray avm_g1EcAdd(ByteArray point1, ByteArray point2) throws Exception {
         // assert valid data.
         require(point1 != null && point2 != null &&
                 point1.length() == G1_POINT_SIZE && point2.length() == G1_POINT_SIZE,
@@ -78,15 +80,7 @@ public class AltBn128 extends Object {
         IInstrumentation.attachedThreadInstrumentation.get().chargeEnergy(AltBn128_avm_g1EcAdd);
 
         // call jni
-        ByteArray r = ByteArray.initArray(G1_POINT_SIZE); // zero byte array of correct size.
-
-        try {
-            r = new ByteArray(Holder.INSTANCE.g1EcAdd(point1.getUnderlying(), point2.getUnderlying()));
-        } catch (Exception e) {
-            System.out.println("EC scalar multiplication failed due to exception: " + e.getMessage());
-        }
-
-        return r;
+        return new ByteArray(Holder.INSTANCE.g1EcAdd(point1.getUnderlying(), point2.getUnderlying()));
     }
 
     /**
@@ -99,9 +93,12 @@ public class AltBn128 extends Object {
      * @param point point in G1, encoded like so: [p.x || p.y]. Each coordinate is 32-byte aligned.
      * @param scalar natural number (> 0), byte aligned to 32 bytes.
      *
-     * @return A G1 point. If multiplication failed (e.g. due to Not On Curve error), a zero ByteArray (of correct size) is returned.
+     * @throws RuntimeException if scalar multiplication failed (e.g. due to Not On Curve error)
+     * @throws IllegalArgumentException if invalid data provided
+     *
+     * @return a point in G1.
      */
-    public static ByteArray avm_g1EcMul(ByteArray point, BigInteger scalar) throws IllegalArgumentException {
+    public static ByteArray avm_g1EcMul(ByteArray point, BigInteger scalar) throws Exception {
         // assert valid data.
         require(point != null && scalar != null &&
                 point.length() == G1_POINT_SIZE && scalar.getUnderlying().signum() != -1,
@@ -117,15 +114,7 @@ public class AltBn128 extends Object {
         IInstrumentation.attachedThreadInstrumentation.get().chargeEnergy(AltBn128_avm_g1EcMul);
 
         // call jni
-        ByteArray r = ByteArray.initArray(G1_POINT_SIZE); // zero byte array of correct size.
-
-        try {
-            r = new ByteArray(Holder.INSTANCE.g1EcMul(point.getUnderlying(), sdata_aligned));
-        } catch (Exception e) {
-            System.out.println("EC scalar multiplication failed due to exception: " + e.getMessage());
-        }
-
-        return r;
+        return new ByteArray(Holder.INSTANCE.g1EcMul(point.getUnderlying(), sdata_aligned));
     }
 
     /**
@@ -143,10 +132,13 @@ public class AltBn128 extends Object {
      * @param g2_point_list list of points in G2, encoded like so: [p1[0].x || p1[0].y || p1[1].x || p2[1].y || p2[0].x || ...].
      *                      Each coordinate is byte aligned to 32 bytes.
      *
-     * @return false if pairing product failed (e.g. due to Not On Curve error), or pairing product does not equal one, else true.
+     * @throws RuntimeException if pairing product failed (e.g. due to Not On Curve error)
+     * @throws IllegalArgumentException if invalid data provided
+     *
+     * @return true if pairing product equals one, else false.
      *
      */
-    public static boolean avm_isPairingProdEqualToOne(ByteArray g1_point_list, ByteArray g2_point_list) throws IllegalArgumentException {
+    public static boolean avm_isPairingProdEqualToOne(ByteArray g1_point_list, ByteArray g2_point_list) throws Exception {
         // assert valid data.
         require(g1_point_list != null && g2_point_list != null &&
                 g1_point_list.length() % G1_POINT_SIZE == 0 && g2_point_list.length() % G2_POINT_SIZE == 0,
@@ -160,15 +152,7 @@ public class AltBn128 extends Object {
                 AltBn128_avm_pairingCheck_base + g1_list_size * AltBn128_avm_pairingCheck_per_pairing);
 
         // call jni
-        boolean r = false;
-
-        try {
-            r = Holder.INSTANCE.ecPair(g1_point_list.getUnderlying(), g2_point_list.getUnderlying());
-        } catch (Exception e) {
-            System.out.println("EC pairing product check failed due to exception: " + e.getMessage());
-        }
-
-        return r;
+        return Holder.INSTANCE.ecPair(g1_point_list.getUnderlying(), g2_point_list.getUnderlying());
     }
 
     private static void require(boolean condition, String message) throws IllegalArgumentException{

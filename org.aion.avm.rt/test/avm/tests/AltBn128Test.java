@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class AltBn128Test {
 
     @Test
-    public void g1EcAddTest() {
+    public void g1EcAddTest() throws Exception {
         byte[] point1 = new byte[32*2];
         byte[] p1x = new BigInteger("222480c9f95409bfa4ac6ae890b9c150bc88542b87b352e92950c340458b0c09",16).toByteArray();
         System.arraycopy(p1x, 0, point1, 0, p1x.length);
