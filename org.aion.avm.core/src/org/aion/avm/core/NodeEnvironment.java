@@ -183,7 +183,7 @@ public class NodeEnvironment {
         // create the object size look-up maps
         Map<String, Integer> rtObjectSizeMap = computeRuntimeObjectSizes();
         // This is to ensure the JCLAndAPIHeapInstanceSize is updated with the correct instance size of a newly added JCL or API class
-        RuntimeAssertionError.assertTrue(rtObjectSizeMap.size() == 95);
+        RuntimeAssertionError.assertTrue(rtObjectSizeMap.size() == 96);
 
         Map<String, Integer> shadowObjectSizeMap = new HashMap<>(); // pre-rename; shadow objects and exceptions
         Map<String, Integer> apiObjectSizeMap = new HashMap<>(); // post-rename; API objects

@@ -45,14 +45,14 @@ public class AltBn128 extends Object {
     private AltBn128() { }
 
     // metering constants
-    public static final long RT_BN_METHOD_FEE_PAIRING_BASE = 45_000;
-    public static final long RT_BN_METHOD_FEE_PAIRING_INSTANCE = 34_000;
+    public static final int RT_BN_METHOD_FEE_PAIRING_BASE = 45_000;
+    public static final int RT_BN_METHOD_FEE_PAIRING_INSTANCE = 34_000;
 
-    public static final long AltBn128_avm_g1EcAdd = RuntimeMethodFeeSchedule.RT_METHOD_FEE_LEVEL_5; // native benchmark per op ~ 7us (more expensive over jni)
-    public static final long AltBn128_avm_g1EcMul = RuntimeMethodFeeSchedule.RT_METHOD_FEE_LEVEL_6; // native benchmark per op ~ 230us (more expensive over jni)
+    public static final int AltBn128_avm_g1EcAdd = RuntimeMethodFeeSchedule.RT_METHOD_FEE_LEVEL_5; // native benchmark per op ~ 7us (more expensive over jni)
+    public static final int AltBn128_avm_g1EcMul = RuntimeMethodFeeSchedule.RT_METHOD_FEE_LEVEL_6; // native benchmark per op ~ 230us (more expensive over jni)
 
-    public static final long AltBn128_avm_pairingCheck_base = RT_BN_METHOD_FEE_PAIRING_BASE; // native benchmark per op ~ 3ms (1 op) - 1.4ms (amortized over 10 ops) (more expensive over jni)
-    public static final long AltBn128_avm_pairingCheck_per_pairing = RT_BN_METHOD_FEE_PAIRING_INSTANCE;
+    public static final int AltBn128_avm_pairingCheck_base = RT_BN_METHOD_FEE_PAIRING_BASE; // native benchmark per op ~ 3ms (1 op) - 1.4ms (amortized over 10 ops) (more expensive over jni)
+    public static final int AltBn128_avm_pairingCheck_per_pairing = RT_BN_METHOD_FEE_PAIRING_INSTANCE;
 
     // Runtime-facing implementation
     /**
