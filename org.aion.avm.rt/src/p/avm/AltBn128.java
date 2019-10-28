@@ -31,7 +31,7 @@ public class AltBn128 extends Object {
         try {
             // the only reason to do this, is to avoid touching the java.library.path
             // assumes a file called "libbn_jni.so" lives at the same location as the jar
-            System.load(new File("artifacts/linux/libbn_jni.so").getCanonicalPath());
+            System.load(new File("native/linux/libbn_jni.so").getCanonicalPath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to load native library for altbn-128");
         }
