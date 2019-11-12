@@ -388,8 +388,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         CodecIdioms.serializeByteArray(serializer, this.v.toByteArray());
     }
 
+    // todo: analyze consequences to gas costing of bumping max byte length from 32 to 128
+    // bump from 32 to 128 was made for ease of prototyping for Tetryon
+    private int MAX_BYTE_LENGTH = 128;
     private boolean isValidLength(int length) {
-        if (length > 32) {
+        if (length > MAX_BYTE_LENGTH) {
             //we're limiting the size of BigInteger to 32 bytes to have better control over the billing
             throw new ArithmeticException();
         }
@@ -397,7 +400,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     private void verifyBitLength(int length) {
-        if (length > 256) {
+        if (length > MAX_BYTE_LENGTH * 8) {
             // since the maximum length is 32 bytes, the designated bit position cannot be bigger than 256
             throw new ArithmeticException();
         }
